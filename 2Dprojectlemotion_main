@@ -1,0 +1,108 @@
+# Solution in this cell.
+# Please do any project extension in the indicated cell below.
+# YOUR CODE HERE
+
+# Import the packages
+import numpy as np
+from scipy import integrate
+import matplotlib.pyplot as plt
+
+#  define the constants
+c = 0.65  # drag coefficient
+g = 9.81  # g
+m = 0.1  # mass of projectile
+v_0 = 10  # magnitued of initial velocity
+theta = 50 * np.pi / 180  # radians, the angle shot upwards
+v_0_x = v_0 * np.cos(theta)  # initial x velocity
+v_0_y = v_0 * np.sin(theta)  # initial y velocity
+x_0 = 0  # initial x position
+y_0 = 0  # initial y position
+
+# Define the array of initial conditions
+
+initial_state = [x_0, y_0, v_0_x, v_0_y]
+
+#  Array for the time
+
+step_lenght = 0.03
+time_start = 0
+#  Estimate the time to stop
+time_stop = np.ceil((v_0_y + np.sqrt(v_0_y**2 + 2 * g * y_0)) / g)
+time_array = np.arange(time_start, time_stop, step_lenght)
+time_for_exact = np.arange(time_start, time_stop, 0.0005)
+
+#  Define the differential equation
+
+
+def system_of_ode(time, arr_variables):
+    x = arr_variables[0]  # this is the x-vector
+    y = arr_variables[1]  # this is the y-vector
+    v_x = arr_variables[2]  # this is the x velocity
+    v_y = arr_variables[3]  # this is the y velocity
+    # this is the derivative of arr_diff_equations
+    return np.array([v_x, v_y, -c * v_x / m, -g - c * v_y / m])
+
+
+solution = integrate.solve_ivp(system_of_ode, (time_array[0], time_array[-1]),
+                               initial_state,
+                               method='LSODA',
+                               t_eval=time_array)
+
+# Define the things we plot
+
+# this is the time array for which we solved the differential equation
+time_solved = solution['t']
+
+# this is the array of values that forms the solution correspoint to the times
+solution_values = solution['y']
+x_solutions = solution_values[0]  # x-values solved
+y_solutions = solution_values[1]  # y-values solved
+velocity_x = solution_values[2]  # vx solved
+velocity_y = solution_values[3]  # vy solved
+
+
+# Generating the exact solution
+def exact_solution_x(time):  # exact solution of x values
+    v_T = m * g / c  # Terminal Velocity
+    return (v_0 * v_T / g) * (1 - np.exp(-g * time / v_T)) * np.cos(theta)
+
+
+def exact_solution_y(time):  # exact solution of y values
+    v_T = m * g / c  # Terminal Velocity
+    return (v_T/g) * (v_T + v_0_y) * \
+                     (1 - np.exp(- g * time / v_T)) - v_T * time
+
+
+exact_x = exact_solution_x(time_for_exact)
+exact_y = exact_solution_y(time_for_exact)
+
+# Find Distance to Impact
+x_where_y_less_than_0 = x_solutions[y_solutions <= 0]
+distance_at_impact = x_where_y_less_than_0[1]
+print('The distance to Impact is {0:.3g} m.'.format(distance_at_impact))
+
+# Find Maximum Height
+y_max = np.amax(y_solutions)
+print('The maximum height reached is {0:.3g} m.'.format(y_max))
+
+# Find Time of Flight
+time_of_flight = np.amin(time_solved[y_solutions < 0])
+print('The time of flight is {0:.3g} s.'.format(time_of_flight))
+
+# Find Velocity at Impact
+velocity_x_at_impact = (velocity_x[y_solutions <= 0])[1]
+velocity_y_at_impact = (velocity_y[y_solutions <= 0])[1]
+velocity_at_impact = np.sqrt(velocity_x_at_impact**2 + velocity_y_at_impact**2)
+print('The velocity at impact is {0:.3g} s.'.format(velocity_at_impact))
+
+# Plotting
+plt.plot(x_solutions, y_solutions, 'ro', label="numerical")
+plt.plot(exact_x, exact_y, 'b-', label="analytic")
+plt.xlabel('x distance (m)')
+plt.ylabel('y distance (m)')
+plt.title('The Trail of the Projectile Through the Air')
+plt.axis()
+plt.gca().set_ylim(bottom=0)
+plt.gca().set_xlim(left=0)
+plt.legend()
+plt.show()
