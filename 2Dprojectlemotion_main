@@ -1,7 +1,3 @@
-# Solution in this cell.
-# Please do any project extension in the indicated cell below.
-# YOUR CODE HERE
-
 # Import the packages
 import numpy as np
 from scipy import integrate
